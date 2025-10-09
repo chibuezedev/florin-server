@@ -14,10 +14,11 @@ mongoose
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const paymentRoutes = require("./routes/payment");
 
+app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 

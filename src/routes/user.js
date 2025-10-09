@@ -1,23 +1,32 @@
 const express = require("express");
 const router = express.Router();
-const AuthMiddleware = require("../middlewares/auth");
+const {
+  getProfile,
+  updateProfile,
+  updatePassword,
+  updateEmail,
+  deactivateAccount,
+  getUserById,
+  getAllUsers,
+  updateUser,
+  deleteUser,
+} = require("../controllers/user");
 
-router.use(AuthMiddleware());
+const Auth = require("../middlewares/auth");
 
-router.get("/profile", (req, res) => {
-  res.json({
-    success: true,
-    message: "Profile accessed",
-    user: req.user,
-  });
-});
+router.use(Auth());
 
-router.get("/dashboard", (req, res) => {
-  res.json({
-    success: true,
-    message: "Dashboard accessed",
-    user: req.user,
-  });
-});
+router.get("/profile", getProfile);
+router.put("/profile", updateProfile);
+router.put("/profile/password", updatePassword);
+router.put("/profile/email", updateEmail);
+router.put("/profile/deactivate", deactivateAccount);
+
+router.use(Auth("admin"));
+
+router.get("/", getAllUsers);
+router.get("/:id", getUserById);
+router.put("/:id", updateUser);
+router.delete("/:id", deleteUser);
 
 module.exports = router;
