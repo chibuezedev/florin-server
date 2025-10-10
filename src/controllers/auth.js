@@ -1,5 +1,8 @@
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require("uuid");
 const User = require("../models/user");
+const BiometricData = require("../models/biometrics");
+const { analyzeBiometrics } = require("../utils/mlAnalyzer");
 
 const generateAccessToken = (userId, role) => {
   return jwt.sign({ userId, role }, process.env.JWT_ACCESS_SECRET, {
@@ -70,7 +73,7 @@ exports.register = async (req, res) => {
 // Login
 exports.login = async (req, res) => {
   try {
-    const { email, studentId, password } = req.body;
+    const { email, studentId, password, biometrics } = req.body;
 
     if (!password || (!email && !studentId)) {
       return res.status(400).json({
@@ -80,8 +83,8 @@ exports.login = async (req, res) => {
     }
 
     const query = studentId ? { studentId } : { email };
-
     const user = await User.findOne(query).select("+password");
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -104,6 +107,60 @@ exports.login = async (req, res) => {
       });
     }
 
+    let mlAnalysis = null;
+    if (biometrics && email) {
+      try {
+        const biometricData = new BiometricData({
+          userId: user._id,
+          email: user.email,
+          sessionId: uuidv4(),
+          logonPattern: biometrics.logonPattern,
+          typingSpeed: biometrics.typingSpeed,
+          mouseDynamics: biometrics.mouseDynamics,
+          emailContext: biometrics.emailContext,
+          touchGesture: biometrics.touchGesture,
+          deviceFingerprint: biometrics.deviceFingerprint,
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"],
+        });
+
+        await biometricData.save();
+
+        // Analyze with ML
+        mlAnalysis = await analyzeBiometrics(
+          biometricData,
+          user._id,
+          user.email
+        );
+
+        // Update with ML results
+        biometricData.anomalyScore = mlAnalysis.anomalyScore;
+        biometricData.riskLevel = mlAnalysis.riskLevel;
+        await biometricData.save();
+
+        // Block critical risk
+        if (mlAnalysis.riskLevel === "critical") {
+          return res.status(403).json({
+            success: false,
+            message: "Login blocked due to suspicious activity",
+            mlAnalysis,
+          });
+        }
+        // Create alert for high anomaly scores
+        if (mlAnalysis.anomalyScore >= 50) {
+          const { createAlert } = require("../utils/alertHelper");
+          try {
+            await createAlert(biometricData, mlAnalysis, user);
+          } catch (alertError) {
+            console.error("Alert creation error:", alertError);
+          }
+        }
+      } catch (biometricError) {
+        console.error("Biometric processing error:", biometricError);
+      }
+    }
+
+    // Generate tokens
     const accessToken = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id);
 
@@ -130,6 +187,7 @@ exports.login = async (req, res) => {
         accessToken,
         refreshToken,
       },
+      mlAnalysis,
     });
   } catch (error) {
     console.error("Login error:", error);

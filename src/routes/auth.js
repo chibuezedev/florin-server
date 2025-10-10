@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/auth");
 const AuthMiddleware = require("../middlewares/auth");
+const biometricCollector = require("../middlewares/biometricCollector");
+const mlAnalyzer = require("../middlewares/mlAnalyzer");
+
 
 router.post("/register", authController.register);
 router.post("/login", authController.login);

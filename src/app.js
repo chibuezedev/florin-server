@@ -17,10 +17,14 @@ mongoose
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const paymentRoutes = require("./routes/payment");
+const biometricRoutes = require("./routes/biometrics");
+const alertRoutes = require("./routes/alerts");
 
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/biometrics", biometricRoutes);
+app.use("/api/alerts", alertRoutes);
 
 app.get("/health", (req, res) => {
   res.json({
