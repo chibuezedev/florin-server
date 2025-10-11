@@ -19,12 +19,15 @@ const userRoutes = require("./routes/user");
 const paymentRoutes = require("./routes/payment");
 const biometricRoutes = require("./routes/biometrics");
 const alertRoutes = require("./routes/alerts");
+const payoutRoutes = require("./routes/payout");
+
 
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/biometrics", biometricRoutes);
 app.use("/api/alerts", alertRoutes);
+app.use("/api/payouts", payoutRoutes);
 
 app.get("/health", (req, res) => {
   res.json({

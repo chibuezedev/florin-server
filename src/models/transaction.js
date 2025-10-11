@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-
 const transactionSchema = new mongoose.Schema(
   {
     paymentId: {
@@ -56,6 +55,10 @@ const transactionSchema = new mongoose.Schema(
     },
     failureReason: String,
     processedAt: Date,
+    payout: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payout",
+    },
   },
   {
     timestamps: true,

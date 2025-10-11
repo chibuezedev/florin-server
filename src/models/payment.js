@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
@@ -74,6 +73,10 @@ const paymentSchema = new mongoose.Schema(
       ipAddress: String,
     },
     notes: String,
+    payout: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payout",
+    },
   },
   {
     timestamps: true,
