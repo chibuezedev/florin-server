@@ -3,7 +3,6 @@ const Transaction = require("../models/transaction");
 const StudentProfile = require("../models/studentProfile");
 const Receipt = require("../models/receipt");
 
-
 exports.getStudentPayments = async (req, res) => {
   try {
     const { status, semester, academicYear } = req.query;
@@ -44,10 +43,10 @@ exports.getPayment = async (req, res) => {
         message: "Payment not found",
       });
     }
-    
+
     if (
       req.user.role === "student" &&
-      payment.studentId._id.toString() !== req.user._id.toString()
+      payment.studentId._id.toString() !== req.user.userId.toString()
     ) {
       return res.status(403).json({
         success: false,
@@ -90,7 +89,7 @@ exports.initiatePayment = async (req, res) => {
 
     const transaction = await Transaction.create({
       paymentId: payment._id,
-      studentId: req.user._id,
+      studentId: req.user.userId,
       amount: payment.amount,
       paymentMethod,
       reference: `TXN-${Date.now()}-${Math.random()
@@ -141,7 +140,6 @@ exports.verifyPayment = async (req, res) => {
     transaction.processedAt = new Date();
     await transaction.save();
 
-
     const payment = await Payment.findById(transaction.paymentId);
     payment.status = "paid";
     payment.paidDate = new Date();
@@ -149,7 +147,7 @@ exports.verifyPayment = async (req, res) => {
     payment.transactionReference = transaction.reference;
     await payment.save();
 
-    const profile = await StudentProfile.findOne({ userId: req.user._id });
+    const profile = await StudentProfile.findOne({ userId: req.user.userId});
     if (profile) {
       profile.totalPaid += payment.amount;
       profile.totalPending -= payment.amount;
@@ -159,7 +157,7 @@ exports.verifyPayment = async (req, res) => {
     const receipt = await Receipt.create({
       receiptNumber: payment.receiptNumber,
       paymentId: payment._id,
-      studentId: req.user._id,
+      studentId: req.user.userId,
       amount: payment.amount,
       description: payment.description,
       paidDate: payment.paidDate,
@@ -247,18 +245,16 @@ exports.getReceipt = async (req, res) => {
   }
 };
 
-exports.createPayment = async (req, res) => {
+exports.createPayment = async ({
+  studentId,
+  amount,
+  description,
+  paymentType,
+  semester,
+  academicYear,
+  dueDate
+}) => {
   try {
-    const {
-      studentId,
-      amount,
-      description,
-      paymentType,
-      semester,
-      academicYear,
-      dueDate,
-    } = req.body;
-
     const payment = await Payment.create({
       studentId,
       amount,
@@ -322,4 +318,3 @@ exports.getAllPayments = async (req, res) => {
     });
   }
 };
-

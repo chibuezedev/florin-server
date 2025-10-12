@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    faculty: {
+      type: String,
+      trim: true,
+    },
     level: {
       type: String,
       enum: ["100", "200", "300", "400", "500", "600", "700", "800"],

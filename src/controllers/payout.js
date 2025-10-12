@@ -3,6 +3,7 @@ const Payout = require("../models/payout");
 const User = require("../models/user");
 const BiometricData = require("../models/biometrics");
 const { analyzeBiometrics } = require("../utils/mlAnalyzer");
+const { createPayment } = require("./payment");
 
 exports.createPayout = async (req, res) => {
   try {
@@ -59,6 +60,65 @@ exports.createPayout = async (req, res) => {
 
     const payout = await Payout.create(payoutData);
 
+    // Build query to find target users
+    let userQuery = { role: "student", isActive: true };
+
+    if (targetType === "all") {
+      // All students - query is already set
+    } else if (targetType === "department") {
+      userQuery.department = { $in: departments };
+    } else if (targetType === "faculty") {
+      userQuery.faculty = { $in: faculties };
+    } else if (targetType === "level") {
+      userQuery.level = { $in: levels };
+    } else if (targetType === "program") {
+      userQuery.program = { $in: programs };
+    } else if (targetType === "custom") {
+      // For custom, build an $or query for any matching criteria
+      const customConditions = [];
+
+      if (departments && departments.length > 0) {
+        customConditions.push({ department: { $in: departments } });
+      }
+      if (faculties && faculties.length > 0) {
+        customConditions.push({ faculty: { $in: faculties } });
+      }
+      if (levels && levels.length > 0) {
+        customConditions.push({ level: { $in: levels } });
+      }
+      if (programs && programs.length > 0) {
+        customConditions.push({ program: { $in: programs } });
+      }
+
+      if (customConditions.length > 0) {
+        userQuery.$or = customConditions;
+      }
+    }
+
+
+    const targetUsers = await User.find(userQuery).select("_id");
+
+    // Create payments for all target users
+    const paymentPromises = targetUsers.map((user) =>
+      createPayment({
+        studentId: user._id,
+        amount,
+        description,
+        paymentType,
+        semester,
+        academicYear,
+        dueDate,
+      })
+    );
+
+    await Promise.all(paymentPromises);
+
+    // Update payout statistics
+    payout.appliedToCount = targetUsers.length;
+    payout.totalExpectedRevenue = amount * targetUsers.length;
+    await payout.save();
+
+    // Biometric processing
     let mlAnalysis = null;
     if (biometrics) {
       const user = await User.findOne({ _id: req.user.userId });
@@ -95,10 +155,11 @@ exports.createPayout = async (req, res) => {
         if (mlAnalysis.riskLevel === "critical") {
           return res.status(403).json({
             success: false,
-            message: "Login blocked due to suspicious activity",
+            message: "Payout blocked due to suspicious activity",
             mlAnalysis,
           });
         }
+
         // Create alert for high anomaly scores
         if (mlAnalysis.anomalyScore >= 50) {
           const { createAlert } = require("../utils/alertHelper");
@@ -116,7 +177,11 @@ exports.createPayout = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Payout created successfully",
-      data: payout,
+      data: {
+        payout,
+        appliedToCount: targetUsers.length,
+        totalExpectedRevenue: amount * targetUsers.length,
+      },
     });
   } catch (error) {
     if (error.name === "ValidationError") {
