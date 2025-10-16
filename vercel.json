@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "name": "florin-server",
+  "builds": [{ "src": "src/app.js", "use": "@vercel/node" }],
+  "routes": [{ "src": "/(.*)", "dest": "/src/app.js" }],
+  "github": {
+    "silent": true
+  }
+}
