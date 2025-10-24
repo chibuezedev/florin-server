@@ -9,6 +9,7 @@ const {
   getReceipt,
   createPayment,
   getAllPayments,
+  getAllReceipts
 } = require("../controllers/payment");
 const AuthMiddleware = require("../middlewares/auth");
 
@@ -16,6 +17,7 @@ router.use(AuthMiddleware());
 
 router.get("/my-payments", getStudentPayments);
 router.get("/summary", getPaymentSummary);
+router.get("/receipts", getAllReceipts);
 router.get("/:id", getPayment);
 router.post("/initiate", initiatePayment);
 router.get("/verify/:reference", verifyPayment);

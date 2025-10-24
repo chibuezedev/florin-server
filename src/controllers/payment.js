@@ -101,9 +101,6 @@ exports.initiatePayment = async (req, res) => {
       userAgent: req.headers["user-agent"],
     });
 
-    // In production, integrate with payment gateway here
-    // For now, we'll simulate a successful payment
-
     res.status(200).json({
       success: true,
       message: "Payment initiated successfully",
@@ -147,7 +144,7 @@ exports.verifyPayment = async (req, res) => {
     payment.transactionReference = transaction.reference;
     await payment.save();
 
-    const profile = await StudentProfile.findOne({ userId: req.user.userId});
+    const profile = await StudentProfile.findOne({ userId: req.user.userId });
     if (profile) {
       profile.totalPaid += payment.amount;
       profile.totalPending -= payment.amount;
@@ -245,6 +242,29 @@ exports.getReceipt = async (req, res) => {
   }
 };
 
+exports.getAllReceipts = async (req, res) => {
+  const userId = req.user.userId;
+
+  try {
+    const all = await Receipt.find({ studentId: userId })
+      .populate("paymentId")
+      .populate("studentId");
+    
+    
+    res.status(200).json({
+      success: true,
+      count: all.length,
+      data: all,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching receipt",
+      error: error.message,
+    });
+  }
+};
+
 exports.createPayment = async ({
   studentId,
   amount,
@@ -252,7 +272,7 @@ exports.createPayment = async ({
   paymentType,
   semester,
   academicYear,
-  dueDate
+  dueDate,
 }) => {
   try {
     const payment = await Payment.create({

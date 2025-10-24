@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+import mongoosePaginate from "mongoose-paginate-v2";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const paymentSchema = new mongoose.Schema(
   {
@@ -95,6 +97,10 @@ paymentSchema.pre("save", function (next) {
 
 paymentSchema.index({ studentId: 1, status: 1 });
 paymentSchema.index({ academicYear: 1, semester: 1 });
+
+paymentSchema.plugin(mongoosePaginate);
+paymentSchema.plugin(mongooseAggregatePaginate);
+
 
 const Payment = mongoose.model("Payment", paymentSchema);
 
