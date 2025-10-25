@@ -1,4 +1,4 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
 
 const payoutSchema = new mongoose.Schema(
   {
@@ -89,6 +89,10 @@ const payoutSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    paidCount: {
+      type: Number,
+      default: 0,
+    },
     totalExpectedRevenue: {
       type: Number,
       default: 0,
@@ -97,13 +101,13 @@ const payoutSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
-payoutSchema.index({ academicYear: 1, semester: 1 })
-payoutSchema.index({ isActive: 1 })
-payoutSchema.index({ targetType: 1 })
+payoutSchema.index({ academicYear: 1, semester: 1 });
+payoutSchema.index({ isActive: 1 });
+payoutSchema.index({ targetType: 1 });
 
-const payout = mongoose.model("Payout", payoutSchema)
+const payout = mongoose.model("Payout", payoutSchema);
 
-module.exports = payout
+module.exports = payout;

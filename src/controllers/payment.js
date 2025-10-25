@@ -2,6 +2,7 @@ const Payment = require("../models/payment");
 const Transaction = require("../models/transaction");
 const StudentProfile = require("../models/studentProfile");
 const Receipt = require("../models/receipt");
+const Payout = require("../models/payout");
 
 exports.getStudentPayments = async (req, res) => {
   try {
@@ -144,6 +145,12 @@ exports.verifyPayment = async (req, res) => {
     payment.transactionReference = transaction.reference;
     await payment.save();
 
+    const payout = await Payout.findById(payment.payout);
+    if (payout) {
+      payout.paidCount += 1;
+      await payout.save();
+    }
+
     const profile = await StudentProfile.findOne({ userId: req.user.userId });
     if (profile) {
       profile.totalPaid += payment.amount;
@@ -249,8 +256,7 @@ exports.getAllReceipts = async (req, res) => {
     const all = await Receipt.find({ studentId: userId })
       .populate("paymentId")
       .populate("studentId");
-    
-    
+
     res.status(200).json({
       success: true,
       count: all.length,

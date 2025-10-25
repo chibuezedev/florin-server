@@ -1,9 +1,41 @@
 const { v4: uuidv4 } = require("uuid");
 const Payout = require("../models/payout");
+const Payment = require("../models/payment");
 const User = require("../models/user");
+const StudentProfile = require("../models/studentProfile");
 const BiometricData = require("../models/biometrics");
 const { analyzeBiometrics } = require("../utils/mlAnalyzer");
-const { createPayment } = require("./payment");
+
+const createPayment = async ({
+  studentId,
+  amount,
+  description,
+  paymentType,
+  semester,
+  academicYear,
+  dueDate,
+  payoutId,
+}) => {
+  const payment = await Payment.create({
+    studentId,
+    amount,
+    description,
+    paymentType,
+    semester,
+    academicYear,
+    dueDate,
+    status: "pending",
+    payout: payoutId,
+  });
+
+  const profile = await StudentProfile.findOne({ userId: studentId });
+  if (profile) {
+    profile.totalPending += amount;
+    await profile.save();
+  }
+
+  return payment;
+};
 
 exports.createPayout = async (req, res) => {
   try {
@@ -60,11 +92,9 @@ exports.createPayout = async (req, res) => {
 
     const payout = await Payout.create(payoutData);
 
-    // Build query to find target users
     let userQuery = { role: "student", isActive: true };
 
     if (targetType === "all") {
-      // All students - query is already set
     } else if (targetType === "department") {
       userQuery.department = { $in: departments };
     } else if (targetType === "faculty") {
@@ -74,7 +104,6 @@ exports.createPayout = async (req, res) => {
     } else if (targetType === "program") {
       userQuery.program = { $in: programs };
     } else if (targetType === "custom") {
-      // For custom, build an $or query for any matching criteria
       const customConditions = [];
 
       if (departments && departments.length > 0) {
@@ -95,10 +124,8 @@ exports.createPayout = async (req, res) => {
       }
     }
 
-
     const targetUsers = await User.find(userQuery).select("_id");
 
-    // Create payments for all target users
     const paymentPromises = targetUsers.map((user) =>
       createPayment({
         studentId: user._id,
@@ -108,12 +135,12 @@ exports.createPayout = async (req, res) => {
         semester,
         academicYear,
         dueDate,
+        payoutId: payout._id,
       })
     );
 
     await Promise.all(paymentPromises);
 
-    // Update payout statistics
     payout.appliedToCount = targetUsers.length;
     payout.totalExpectedRevenue = amount * targetUsers.length;
     await payout.save();
