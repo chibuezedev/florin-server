@@ -61,6 +61,18 @@ const biometricDataSchema = new mongoose.Schema(
       enum: ["low", "medium", "high", "critical"],
       default: "low",
     },
+    prediction: {
+      type: String,
+    },
+    confidence: {
+      type: Number,
+    },
+    featureImportance: {
+      type: Object,
+    },
+    explanation: {
+      type: String,
+    },
   },
   {
     timestamps: true,

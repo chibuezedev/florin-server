@@ -70,7 +70,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// Login
 exports.login = async (req, res) => {
   try {
     const { email, studentId, password, biometrics } = req.body;
@@ -133,7 +132,6 @@ exports.login = async (req, res) => {
           user.email
         );
 
-        // Update with ML results
         biometricData.anomalyScore = mlAnalysis.anomalyScore;
         biometricData.riskLevel = mlAnalysis.riskLevel;
         await biometricData.save();
@@ -146,11 +144,21 @@ exports.login = async (req, res) => {
             mlAnalysis,
           });
         }
-        // Create alert for high anomaly scores
         if (mlAnalysis.anomalyScore >= 50) {
           const { createAlert } = require("../utils/alertHelper");
           try {
-            await createAlert(biometricData, mlAnalysis, user);
+            await createAlert(
+              biometricData,
+              {
+                anomalyScore: mlAnalysis.anomalyScore,
+                riskLevel: mlAnalysis.riskLevel,
+                prediction: mlAnalysis.prediction,
+                confidence: mlAnalysis.confidence,
+                featureImportance: mlAnalysis.featureImportance,
+                explanation: mlAnalysis.explanation,
+              },
+              user
+            );
           } catch (alertError) {
             console.error("Alert creation error:", alertError);
           }

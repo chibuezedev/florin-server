@@ -35,20 +35,28 @@ const mlAnalyzer = async (req, res, next) => {
       archetype: archetype,
     };
 
-    console.log("Sending to ML model:", { activityFlow, archetype });
-
     const mlResponse = await axios.post(
       process.env.ML_SERVICE_URL || "http://localhost:8000/predict",
       features,
       { timeout: 5000 }
     );
 
-
-    const { anomalyScore, riskLevel } = mlResponse.data;
+    const {
+      anomalyScore,
+      riskLevel,
+      prediction,
+      confidence,
+      featureImportance,
+      explanation,
+    } = mlResponse.data;
 
     await BiometricData.findByIdAndUpdate(req.biometricData._id, {
       anomalyScore,
       riskLevel,
+      prediction,
+      confidence,
+      featureImportance,
+      explanation,
     });
 
     if (anomalyScore >= 50) {
@@ -56,7 +64,14 @@ const mlAnalyzer = async (req, res, next) => {
       try {
         await createAlert(
           req.biometricData,
-          { anomalyScore, riskLevel },
+          {
+            anomalyScore,
+            riskLevel,
+            prediction,
+            confidence,
+            featureImportance,
+            explanation,
+          },
           req.user
         );
       } catch (alertError) {

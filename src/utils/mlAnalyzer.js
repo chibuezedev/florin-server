@@ -31,6 +31,10 @@ async function analyzeBiometrics(biometricData, userId, email) {
     return {
       anomalyScore: mlResponse.data.anomalyScore,
       riskLevel: mlResponse.data.riskLevel,
+      prediction: mlResponse.data.prediction,
+      confidence: mlResponse.data.confidence,
+      featureImportance: mlResponse.data.featureImportance,
+      explanation: mlResponse.data.explanation,
     };
   } catch (error) {
     console.error("ML analysis error:", error);

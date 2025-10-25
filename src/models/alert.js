@@ -34,6 +34,18 @@ const alertSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    prediction: {
+      type: String,
+    },
+    confidence: {
+      type: Number,
+    },
+    featureImportance: {
+      type: Object,
+    },
+    explanation: {
+      type: String,
+    },
     details: {
       typingRhythm: Number,
       transactionFrequency: Number,

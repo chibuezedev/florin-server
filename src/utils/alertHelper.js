@@ -3,24 +3,24 @@ const Alert = require("../models/alert");
 const createAlert = async (biometricData, mlAnalysis, user) => {
   try {
     const details = {};
-    
+
     // Extract relevant details
     if (biometricData.typingSpeed?.accuracy) {
       details.typingRhythm = 100 - biometricData.typingSpeed.accuracy;
     }
-    
+
     if (biometricData.logonPattern?.failedAttempts) {
       details.failedLogins = biometricData.logonPattern.failedAttempts;
     }
-    
+
     // Check for unusual time (outside 6 AM - 10 PM)
     const hour = new Date().getHours();
     details.unusualTime = hour < 6 || hour > 22;
-    
+
     if (biometricData.logonPattern?.locationConsistency < 50) {
       details.locationAnomaly = true;
     }
-    
+
     details.ipAddress = biometricData.ipAddress;
     details.deviceFingerprint = biometricData.deviceFingerprint;
 
@@ -43,6 +43,10 @@ const createAlert = async (biometricData, mlAnalysis, user) => {
       severity: mlAnalysis.riskLevel,
       description,
       anomalyScore: mlAnalysis.anomalyScore,
+      prediction: mlAnalysis.prediction,
+      confidence: mlAnalysis.confidence,
+      featureImportance: mlAnalysis.featureImportance,
+      explanation: mlAnalysis.explanation,
       details,
       biometricDataId: biometricData._id,
     });
@@ -57,7 +61,7 @@ const createAlert = async (biometricData, mlAnalysis, user) => {
 
 const generateDescription = (type, mlAnalysis, details) => {
   const score = mlAnalysis.anomalyScore;
-  
+
   if (type === "behavioral") {
     return `Unusual behavioral pattern detected with anomaly score of ${score}. Typing rhythm and interaction patterns differ from established baseline.`;
   } else if (type === "access") {
@@ -74,7 +78,7 @@ const generateDescription = (type, mlAnalysis, details) => {
     }
     return `Login pattern deviates from normal behavior. Anomaly score: ${score}.`;
   }
-  
+
   return `Suspicious activity detected with anomaly score of ${score}.`;
 };
 
