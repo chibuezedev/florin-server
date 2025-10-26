@@ -23,7 +23,7 @@ router.post("/initiate", initiatePayment);
 router.get("/verify/:reference", verifyPayment);
 router.get("/receipt/:id", getReceipt);
 
-router.use(AuthMiddleware("admin", "staff"));
+router.use(AuthMiddleware(["admin", "staff"]));
 
 router.post("/", createPayment);
 router.get("/", getAllPayments);

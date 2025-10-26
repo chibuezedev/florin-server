@@ -22,7 +22,7 @@ router.put("/profile/password", updatePassword);
 router.put("/profile/email", updateEmail);
 router.put("/profile/deactivate", deactivateAccount);
 
-router.use(Auth("admin"));
+router.use(Auth(["admin", "staff"]));
 
 router.get("/", getAllUsers);
 router.get("/:id", getUserById);
