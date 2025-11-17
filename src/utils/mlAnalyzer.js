@@ -23,7 +23,7 @@ async function analyzeBiometrics(biometricData, userId, email) {
     };
 
     const mlResponse = await axios.post(
-      process.env.ML_SERVICE_URL || "http://localhost:8000/predict",
+      process.env.ML_SERVICE_URL || "https://florin-model.onrender.com/predict",
       features,
       { timeout: 3000 }
     );
